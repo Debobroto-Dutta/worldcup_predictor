@@ -9,7 +9,12 @@ import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///worldcup.db')
+
+# Fix PostgreSQL URL for Render (postgres:// -> postgresql://)
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///worldcup.db')
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Session Configuration for production
@@ -595,7 +600,8 @@ def init_database():
 @app.route('/')
 def index():
     """Serve the main frontend page"""
-    return send_from_directory('../frontend', 'index.html')
+    frontend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'frontend')
+    return send_from_directory(frontend_dir, 'index.html')
 
 @app.route('/<path:path>')
 def serve_static(path):
@@ -605,11 +611,12 @@ def serve_static(path):
         return jsonify({'error': 'API endpoint not found'}), 404
     
     # Serve frontend files
+    frontend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'frontend')
     try:
-        return send_from_directory('../frontend', path)
+        return send_from_directory(frontend_dir, path)
     except:
-        # If file not found, return 404 or redirect to index
-        return send_from_directory('../frontend', 'index.html')
+        # If file not found, return index.html for SPA routing
+        return send_from_directory(frontend_dir, 'index.html')
 
 @app.route('/api')
 def api_info():

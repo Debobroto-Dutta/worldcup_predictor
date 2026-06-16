@@ -3,7 +3,7 @@ services:
     name: worldcup-predictor
     env: python
     buildCommand: pip install -r requirements.txt && python init_render_db.py
-    startCommand: gunicorn backend.app:app
+    startCommand: gunicorn backend.app:app --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -13,6 +13,8 @@ services:
         fromDatabase:
           name: worldcup-db
           property: connectionString
+      - key: SESSION_COOKIE_SECURE
+        value: true
       - key: MAIL_SERVER
         sync: false
       - key: MAIL_PORT
