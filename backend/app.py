@@ -637,9 +637,26 @@ def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'healthy', 'timestamp': datetime.utcnow().isoformat()}), 200
 
-if __name__ == '__main__':
-    with app.app_context():
+# Initialize database on startup
+with app.app_context():
+    try:
+        # Try to create tables if they don't exist
         db.create_all()
+        print("✓ Database tables initialized")
+        
+        # Create default admin user if it doesn't exist
+        admin = User.query.filter_by(username='admin').first()
+        if not admin:
+            admin = User(username='admin', email='admin@worldcup.com')
+            admin.set_password('admin123')
+            admin.is_admin = True
+            db.session.add(admin)
+            db.session.commit()
+            print("✓ Default admin user created (username: admin, password: admin123)")
+    except Exception as e:
+        print(f"⚠️  Database initialization warning: {e}")
+
+if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
 
 # Made with Bob
