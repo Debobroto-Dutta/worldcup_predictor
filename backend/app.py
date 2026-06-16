@@ -653,16 +653,6 @@ with app.app_context():
             db.session.add(admin)
             db.session.commit()
             print("✓ Default admin user created (username: admin, password: admin123)")
-        
-        # Seed matches if database is empty
-        match_count = Match.query.count()
-        if match_count == 0:
-            print("📅 No matches found. Adding World Cup 2026 schedule...")
-            from backend.seed_data import seed_matches
-            seed_matches()
-            print("✓ Matches added successfully!")
-        else:
-            print(f"✓ Database has {match_count} matches")
             
     except Exception as e:
         print(f"⚠️  Database initialization warning: {e}")
