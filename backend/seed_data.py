@@ -10,9 +10,11 @@ from datetime import datetime
 def seed_matches():
     """Add FIFA World Cup 2026 matches from official schedule"""
     
-    # Clear existing matches
-    Match.query.delete()
-    print("Cleared existing matches")
+    # Don't clear if matches already exist (when called from app startup)
+    existing_count = Match.query.count()
+    if existing_count > 0:
+        print(f"Matches already exist ({existing_count} matches). Skipping seed.")
+        return
     
     matches = [
         # Group Stage Matches
