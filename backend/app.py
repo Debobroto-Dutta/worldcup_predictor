@@ -653,6 +653,15 @@ with app.app_context():
     except Exception as e:
         print(f"⚠️  Database initialization warning: {e}")
 
+# Initialize automatic match result updater
+try:
+    from backend.match_updater import setup_scheduler
+    scheduler = setup_scheduler(app)
+    print("✓ Automatic match result updater initialized")
+except Exception as e:
+    print(f"⚠️  Match updater initialization warning: {e}")
+    print("   Manual result updates will still work via admin panel")
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
 
