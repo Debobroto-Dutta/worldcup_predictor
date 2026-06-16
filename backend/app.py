@@ -723,6 +723,127 @@ def get_predictions_by_match():
     
     return jsonify(result), 200
 
+@app.route('/api/admin/predictions/<int:prediction_id>', methods=['PUT'])
+@login_required
+def admin_update_prediction(prediction_id):
+    """Update any user's prediction (admin only) - works even after match is finished"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    prediction = Prediction.query.get_or_404(prediction_id)
+    data = request.get_json()
+    
+    if not all(k in data for k in ['predicted_home_score', 'predicted_away_score']):
+        return jsonify({'error': 'Missing required fields'}), 400
+    
+    try:
+        # Update prediction scores
+        prediction.predicted_home_score = int(data['predicted_home_score'])
+        prediction.predicted_away_score = int(data['predicted_away_score'])
+        
+        # Recalculate points if match is finished
+        if prediction.match.is_finished:
+            prediction.points_earned = prediction.calculate_points()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Prediction updated successfully',
+            'prediction': {
+                'id': prediction.id,
+                'user': prediction.user.username,
+                'match': f"{prediction.match.team_home} vs {prediction.match.team_away}",
+                'predicted_home_score': prediction.predicted_home_score,
+                'predicted_away_score': prediction.predicted_away_score,
+                'points_earned': prediction.points_earned
+            }
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/predictions/<int:prediction_id>', methods=['DELETE'])
+@login_required
+def admin_delete_prediction(prediction_id):
+    """Delete any user's prediction (admin only)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    prediction = Prediction.query.get_or_404(prediction_id)
+    
+    try:
+        user = prediction.user.username
+        match = f"{prediction.match.team_home} vs {prediction.match.team_away}"
+        
+        db.session.delete(prediction)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Prediction deleted successfully',
+            'deleted': {
+                'user': user,
+                'match': match
+            }
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/predictions/create', methods=['POST'])
+@login_required
+def admin_create_prediction():
+    """Create a prediction for any user (admin only) - works even after match is finished"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    data = request.get_json()
+    
+    if not all(k in data for k in ['user_id', 'match_id', 'predicted_home_score', 'predicted_away_score']):
+        return jsonify({'error': 'Missing required fields'}), 400
+    
+    # Check if user exists
+    user = User.query.get_or_404(data['user_id'])
+    match = Match.query.get_or_404(data['match_id'])
+    
+    # Check if prediction already exists
+    existing = Prediction.query.filter_by(
+        user_id=data['user_id'],
+        match_id=data['match_id']
+    ).first()
+    
+    if existing:
+        return jsonify({'error': 'Prediction already exists for this user and match. Use PUT to update.'}), 400
+    
+    try:
+        prediction = Prediction(
+            user_id=data['user_id'],
+            match_id=data['match_id'],
+            predicted_home_score=int(data['predicted_home_score']),
+            predicted_away_score=int(data['predicted_away_score'])
+        )
+        
+        # Calculate points if match is already finished
+        if match.is_finished:
+            prediction.points_earned = prediction.calculate_points()
+        
+        db.session.add(prediction)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Prediction created successfully',
+            'prediction': {
+                'id': prediction.id,
+                'user': user.username,
+                'match': f"{match.team_home} vs {match.team_away}",
+                'predicted_home_score': prediction.predicted_home_score,
+                'predicted_away_score': prediction.predicted_away_score,
+                'points_earned': prediction.points_earned
+            }
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 # ============= Leaderboard Routes =============
 
 @app.route('/api/leaderboard', methods=['GET'])
