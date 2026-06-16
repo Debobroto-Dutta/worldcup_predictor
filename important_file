@@ -1,0 +1,47 @@
+MeO33bkD4$*7GV8wXC8V
+
+
+
+TABLES	169
+VIEWS	6
+PROCEDURES	303
+FUNCTIONS	25
+TRIGGERS	0
+SEQUENCES	247
+
+
+
+SELECT EXECUTABLE_ID,NUM_EXECUTIONS,STMT_TEXT FROM SYSTOOLS.HMON_ATM_INFO;
+
+
+postgresql://database_user:GGIFCG2hew20F5XYAxFx54XEWgtu8l8t@dpg-d8ojsae7r5hc73fngm80-a.singapore-postgres.render.com/worldcup_84pp
+
+
+cd worldcup-api
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+
+
+cd worldcup-api
+source venv/bin/activate
+./run.sh
+
+cd worldcup-api
+source venv/bin/activate
+python check_live_scores.py
+
+hostname:dpg-d8ojsae7r5hc73fngm80-a.singapore-postgres.render.com
+Port:5432
+Database Name:worldcup_84pp
+admin username:database_user
+password:GGIFCG2hew20F5XYAxFx54XEWgtu8l8t
+
+
+
+URLs:
+https://worldcup-predictor-bbh5.onrender.com/index.html
+https://worldcup-predictor-bbh5.onrender.com/admin.html
+https://worldcup-predictor-bbh5.onrender.com/edit-predictions.html
+https://worldcup-predictor-bbh5.onrender.com/remove-urls.html

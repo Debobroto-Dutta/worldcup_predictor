@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Match URLs - Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex: 1;
+        }
+
+        select, input {
+            padding: 10px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #22c55e;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #16a34a;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-back {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-back:hover {
+            background: #4b5563;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status.success {
+            background: #dcfce7;
+            color: #166534;
+            border-left: 4px solid #22c55e;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .bulk-actions {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .bulk-actions h3 {
+            color: #1f2937;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .bulk-form {
+            display: grid;
+            gap: 15px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 150px 1fr auto;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .url-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .matches-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .match-card {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 40px 1fr auto;
+            gap: 20px;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .match-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        }
+
+        .match-card.selected {
+            border-color: #22c55e;
+            background: #f0fdf4;
+        }
+
+        .match-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .match-info {
+            flex: 1;
+        }
+
+        .match-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+
+        .match-details {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 10px;
+        }
+
+        .url-display {
+            font-size: 12px;
+            color: #3b82f6;
+            font-family: monospace;
+            background: #eff6ff;
+            padding: 6px 10px;
+            border-radius: 6px;
+            word-break: break-all;
+        }
+
+        .url-display.empty {
+            color: #9ca3af;
+            background: #f3f4f6;
+        }
+
+        .match-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-finished {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-upcoming {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-has-url {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-no-url {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(102, 126, 234, 0.2);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Manage Match URLs</h1>
+        <p class="subtitle">Admin Tool - Add, edit, or remove streaming URLs for matches</p>
+
+        <div id="status" class="status"></div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-value" id="totalMatches">0</div>
+                <div class="stat-label">Total Matches</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="matchesWithUrls">0</div>
+                <div class="stat-label">Matches with URLs</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="selectedCount">0</div>
+                <div class="stat-label">Selected</div>
+            </div>
+        </div>
+
+        <div class="bulk-actions">
+            <h3>🚀 Bulk Actions</h3>
+            <div class="bulk-form">
+                <div class="form-row">
+                    <label class="form-label">URL Template:</label>
+                    <input type="text" 
+                           id="urlTemplate" 
+                           class="url-input" 
+                           placeholder="https://example.com/watch?id={id}"
+                           value="https://cricboost.pages.dev/?id={id}">
+                    <button class="btn-success" onclick="bulkSetUrls()">
+                        ✓ Set URLs for Selected
+                    </button>
+                </div>
+                <p class="help-text">💡 Use {id} in the URL template - it will be replaced with each match ID</p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="filter-group">
+                <label>Filter:</label>
+                <select id="filterStatus" onchange="filterMatches()">
+                    <option value="all">All Matches</option>
+                    <option value="with-url">With URLs</option>
+                    <option value="without-url">Without URLs</option>
+                    <option value="finished">Finished</option>
+                    <option value="upcoming">Upcoming</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <input type="text" id="searchInput" placeholder="Search teams..." oninput="filterMatches()">
+            </div>
+            <button class="btn-primary" onclick="selectAll()">☑️ Select All</button>
+            <button class="btn-primary" onclick="deselectAll()">☐ Deselect All</button>
+            <button class="btn-primary" onclick="loadMatches()">🔄 Refresh</button>
+            <button class="btn-back" onclick="window.location.href='admin.html'">← Back</button>
+        </div>
+
+        <div id="matchesContainer">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>Loading matches...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit URL Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-title">Edit Match URL</h2>
+            <div class="modal-body">
+                <p id="modalMatchInfo" style="margin-bottom: 15px; color: #6b7280;"></p>
+                <label class="form-label">Streaming URL:</label>
+                <input type="text" id="modalUrlInput" class="url-input" style="width: 100%; margin-top: 10px;" placeholder="https://example.com/watch">
+                <p class="help-text">Leave empty to remove the URL</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-primary" onclick="closeModal()">Cancel</button>
+                <button class="btn-success" onclick="saveUrl()">💾 Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allMatches = [];
+        let selectedMatches = new Set();
+        let currentEditMatchId = null;
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            setTimeout(() => status.style.display = 'none', 5000);
+        }
+
+        async function loadMatches() {
+            const container = document.getElementById('matchesContainer');
+            container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading matches...</p></div>';
+
+            try {
+                const response = await fetch('/api/admin/manage-match-urls', {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load matches');
+                }
+
+                const data = await response.json();
+                allMatches = data.matches;
+                updateStats();
+                displayMatches(allMatches);
+            } catch (error) {
+                container.innerHTML = `<div class="loading">❌ Error: ${error.message}</div>`;
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('totalMatches').textContent = allMatches.length;
+            document.getElementById('matchesWithUrls').textContent = allMatches.filter(m => m.has_url).length;
+            document.getElementById('selectedCount').textContent = selectedMatches.size;
+            document.getElementById('stats').style.display = 'grid';
+        }
+
+        function displayMatches(matches) {
+            const container = document.getElementById('matchesContainer');
+            
+            if (matches.length === 0) {
+                container.innerHTML = '<div class="loading">No matches found</div>';
+                return;
+            }
+
+            const html = matches.map(match => `
+                <div class="match-card ${selectedMatches.has(match.id) ? 'selected' : ''}" data-match-id="${match.id}">
+                    <input type="checkbox" 
+                           class="match-checkbox" 
+                           ${selectedMatches.has(match.id) ? 'checked' : ''}
+                           onchange="toggleMatch(${match.id})">
+                    <div class="match-info">
+                        <div class="match-title">${match.home} vs ${match.away}</div>
+                        <div class="match-details">
+                            📅 ${new Date(match.date).toLocaleString()} | 🏆 ${match.stage}
+                            ${match.is_finished ? ` | ⚽ ${match.home_score}-${match.away_score}` : ''}
+                        </div>
+                        <div class="url-display ${match.has_url ? '' : 'empty'}">
+                            ${match.has_url ? `🔗 ${match.live_stream_url}` : '❌ No URL set'}
+                        </div>
+                    </div>
+                    <div class="match-actions">
+                        <span class="status-badge ${match.is_finished ? 'badge-finished' : 'badge-upcoming'}">
+                            ${match.is_finished ? '✓ Finished' : '⏳ Upcoming'}
+                        </span>
+                        <span class="status-badge ${match.has_url ? 'badge-has-url' : 'badge-no-url'}">
+                            ${match.has_url ? '🔗 Has URL' : '❌ No URL'}
+                        </span>
+                        <button class="btn-primary" onclick="editUrl(${match.id})">
+                            ✏️ Edit
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = `<div class="matches-grid">${html}</div>`;
+        }
+
+        function toggleMatch(matchId) {
+            if (selectedMatches.has(matchId)) {
+                selectedMatches.delete(matchId);
+            } else {
+                selectedMatches.add(matchId);
+            }
+            updateStats();
+            displayMatches(filterCurrentMatches());
+        }
+
+        function selectAll() {
+            const filtered = filterCurrentMatches();
+            filtered.forEach(m => selectedMatches.add(m.id));
+            updateStats();
+            displayMatches(filtered);
+        }
+
+        function deselectAll() {
+            selectedMatches.clear();
+            updateStats();
+            displayMatches(filterCurrentMatches());
+        }
+
+        function filterCurrentMatches() {
+            const status = document.getElementById('filterStatus').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+
+            let filtered = allMatches;
+
+            if (status === 'with-url') {
+                filtered = filtered.filter(m => m.has_url);
+            } else if (status === 'without-url') {
+                filtered = filtered.filter(m => !m.has_url);
+            } else if (status === 'finished') {
+                filtered = filtered.filter(m => m.is_finished);
+            } else if (status === 'upcoming') {
+                filtered = filtered.filter(m => !m.is_finished);
+            }
+
+            if (search) {
+                filtered = filtered.filter(m => 
+                    m.home.toLowerCase().includes(search) ||
+                    m.away.toLowerCase().includes(search)
+                );
+            }
+
+            return filtered;
+        }
+
+        function filterMatches() {
+            displayMatches(filterCurrentMatches());
+        }
+
+        function editUrl(matchId) {
+            const match = allMatches.find(m => m.id === matchId);
+            if (!match) return;
+
+            currentEditMatchId = matchId;
+            document.getElementById('modalMatchInfo').textContent = `${match.home} vs ${match.away}`;
+            document.getElementById('modalUrlInput').value = match.live_stream_url || '';
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('active');
+            currentEditMatchId = null;
+        }
+
+        async function saveUrl() {
+            if (!currentEditMatchId) return;
+
+            const url = document.getElementById('modalUrlInput').value.trim();
+
+            try {
+                const response = await fetch(`/api/admin/set-match-url/${currentEditMatchId}`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ live_stream_url: url })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update URL');
+                }
+
+                const data = await response.json();
+                showStatus(`✓ ${data.message}`, 'success');
+                closeModal();
+                loadMatches();
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function bulkSetUrls() {
+            if (selectedMatches.size === 0) {
+                showStatus('Please select at least one match', 'error');
+                return;
+            }
+
+            const urlTemplate = document.getElementById('urlTemplate').value.trim();
+            if (!urlTemplate) {
+                showStatus('Please enter a URL template', 'error');
+                return;
+            }
+
+            if (!confirm(`Set URLs for ${selectedMatches.size} selected matches?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/bulk-set-urls', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        match_ids: Array.from(selectedMatches),
+                        url_template: urlTemplate
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to set URLs');
+                }
+
+                const data = await response.json();
+                showStatus(`✓ ${data.message}`, 'success');
+                selectedMatches.clear();
+                loadMatches();
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Load on page load
+        window.addEventListener('load', loadMatches);
+
+        // Close modal on outside click
+        document.getElementById('editModal').addEventListener('click', (e) => {
+            if (e.target.id === 'editModal') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

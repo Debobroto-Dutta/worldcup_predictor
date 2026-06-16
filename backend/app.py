@@ -1157,6 +1157,113 @@ def check_past_match_urls():
         }), 200
         
     except Exception as e:
+
+@app.route('/api/admin/manage-match-urls', methods=['GET'])
+@login_required
+def get_all_match_urls():
+    """Get all matches with their URL status (admin only)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        matches = Match.query.order_by(Match.match_date).all()
+        
+        matches_info = []
+        for match in matches:
+            matches_info.append({
+                'id': match.id,
+                'home': match.team_home,
+                'away': match.team_away,
+                'date': match.match_date.isoformat(),
+                'stage': match.stage,
+                'is_finished': match.is_finished,
+                'home_score': match.home_score,
+                'away_score': match.away_score,
+                'live_stream_url': match.live_stream_url,
+                'has_url': bool(match.live_stream_url)
+            })
+        
+        return jsonify({
+            'total_matches': len(matches),
+            'matches_with_urls': sum(1 for m in matches if m.live_stream_url),
+            'matches': matches_info
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/set-match-url/<int:match_id>', methods=['POST'])
+@login_required
+def set_match_url(match_id):
+    """Set or update URL for a specific match (admin only)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    match = Match.query.get_or_404(match_id)
+    data = request.get_json()
+    
+    if 'live_stream_url' not in data:
+        return jsonify({'error': 'live_stream_url is required'}), 400
+    
+    try:
+        old_url = match.live_stream_url
+        match.live_stream_url = data['live_stream_url'] if data['live_stream_url'] else None
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'URL updated successfully',
+            'match': {
+                'id': match.id,
+                'home': match.team_home,
+                'away': match.team_away,
+                'old_url': old_url,
+                'new_url': match.live_stream_url
+            }
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/bulk-set-urls', methods=['POST'])
+@login_required
+def bulk_set_urls():
+    """Set URLs for multiple matches at once (admin only)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    data = request.get_json()
+    
+    if 'match_ids' not in data or 'url_template' not in data:
+        return jsonify({'error': 'match_ids and url_template are required'}), 400
+    
+    match_ids = data['match_ids']
+    url_template = data['url_template']
+    
+    try:
+        updated_matches = []
+        for match_id in match_ids:
+            match = Match.query.get(match_id)
+            if match:
+                # Replace {id} in template with match ID
+                url = url_template.replace('{id}', str(match_id))
+                match.live_stream_url = url
+                updated_matches.append({
+                    'id': match.id,
+                    'home': match.team_home,
+                    'away': match.team_away,
+                    'url': url
+                })
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'Successfully set URLs for {len(updated_matches)} matches',
+            'updated_count': len(updated_matches),
+            'matches': updated_matches
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
         return jsonify({'error': str(e)}), 500
 
 # Initialize database tables on startup (no data seeding)
