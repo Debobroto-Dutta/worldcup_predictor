@@ -655,7 +655,15 @@ with app.app_context():
 
 # Initialize automatic match result updater
 try:
-    from backend.match_updater import setup_scheduler
+    from backend.match_updater import setup_scheduler, MatchUpdater
+    
+    # First, backfill all historical results (matches already played)
+    updater = MatchUpdater(app)
+    backfilled = updater.backfill_all_results()
+    if backfilled > 0:
+        print(f"✓ Backfilled {backfilled} historical match result(s)")
+    
+    # Then start the scheduler for ongoing updates
     scheduler = setup_scheduler(app)
     print("✓ Automatic match result updater initialized")
 except Exception as e:
