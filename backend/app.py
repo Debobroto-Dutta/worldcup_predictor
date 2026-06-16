@@ -746,15 +746,23 @@ with app.app_context():
 try:
     from backend.match_updater import setup_scheduler, MatchUpdater
     
-    # First, backfill all historical results (matches already played)
     updater = MatchUpdater(app)
+    
+    # First, sync all matches from API (creates new matches if needed)
+    print("🔄 Syncing matches from API...")
+    created, updated = updater.sync_matches_from_api()
+    if created > 0 or updated > 0:
+        print(f"✓ Synced matches: {created} created, {updated} updated")
+    
+    # Then, backfill all historical results (updates scores for finished matches)
+    print("🔄 Backfilling historical results...")
     backfilled = updater.backfill_all_results()
     if backfilled > 0:
         print(f"✓ Backfilled {backfilled} historical match result(s)")
     
-    # Then start the scheduler for ongoing updates
+    # Finally, start the scheduler for ongoing updates
     scheduler = setup_scheduler(app)
-    print("✓ Automatic match result updater initialized")
+    print("✓ Automatic match result updater initialized (runs every 15 minutes)")
 except Exception as e:
     print(f"⚠️  Match updater initialization warning: {e}")
     print("   Manual result updates will still work via admin panel")
