@@ -1,9 +1,15 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
+import pytz
 
 db = SQLAlchemy()
+
+def get_ist_now():
+    """Get current time in IST"""
+    ist = pytz.timezone('Asia/Kolkata')
+    return datetime.now(ist)
 
 class User(UserMixin, db.Model):
     """User model for authentication and tracking"""
@@ -12,7 +18,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=get_ist_now)
     
     # Relationships
     predictions = db.relationship('Prediction', backref='user', lazy=True, cascade='all, delete-orphan')
@@ -78,7 +84,7 @@ class Prediction(db.Model):
     # User's prediction
     predicted_home_score = db.Column(db.Integer, nullable=False)
     predicted_away_score = db.Column(db.Integer, nullable=False)
-    predicted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    predicted_at = db.Column(db.DateTime, default=get_ist_now)
     
     # Points earned (calculated after match finishes)
     points_earned = db.Column(db.Integer, nullable=True)
