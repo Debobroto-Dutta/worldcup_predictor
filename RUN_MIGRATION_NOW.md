@@ -1,9 +1,14 @@
 # 🚀 Run Database Migration NOW
 
-## Quick Start - Run This Command:
+## Quick Start - Run These Commands:
 
 ```bash
 cd /home/debobrod/Desktop/worldcup-predictor
+
+# Install psycopg2 if not already installed
+pip install psycopg2-binary
+
+# Run the migration
 python migrate_render_direct.py
 ```
 

@@ -440,6 +440,10 @@ def update_match(match_id):
     if 'espn_match_id' in data:
         match.espn_match_id = data['espn_match_id']
     
+    # Auto-set live stream URL if match has started and URL is not set
+    if not match.live_stream_url and match.match_date <= datetime.utcnow():
+        match.live_stream_url = f"https://cricboost.pages.dev/?id=h"
+    
     db.session.commit()
     
     return jsonify({'message': 'Match updated successfully'}), 200
@@ -996,6 +1000,16 @@ try:
 except Exception as e:
     print(f"⚠️  ESPN updater initialization warning: {e}")
     print("   Manual ESPN updates will still work via admin panel")
+
+# Initialize auto live URL setter (runs every 30 minutes)
+try:
+    from backend.auto_set_live_urls import setup_auto_url_scheduler
+    
+    url_scheduler = setup_auto_url_scheduler(app)
+    print("✓ Auto live URL setter initialized (runs every 30 minutes)")
+except Exception as e:
+    print(f"⚠️  Auto URL setter initialization warning: {e}")
+    print("   Live URLs can still be set manually via admin panel")
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
