@@ -693,55 +693,61 @@ async function deleteUser(userId) {
         console.error('Error deleting user:', error);
         showMessage('Error deleting user', true);
     }
+}
 
 async function sendPasswordResetEmail(userId, username, email) {
-    if (!confirm(`Send password reset email to ${username} (${email})?`)) {
-        return;
-    }
+    // Ask user which method they prefer
+    const choice = confirm(`Reset password for ${username} (${email})?\n\nClick OK to manually set a new password (no email)\nClick Cancel to send a reset email link`);
     
-    try {
-        const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/send-reset-email`, {
-            method: 'POST',
-            credentials: 'include'
-        });
+    if (choice) {
+        // Manual password reset (no email)
+        const newPassword = prompt('Enter new password for user (minimum 6 characters):');
+        if (!newPassword) return;
         
-        if (response.ok) {
-            const data = await response.json();
-            showMessage(data.message || 'Password reset email sent successfully!');
-        } else {
-            const data = await response.json();
-            showMessage(data.error || 'Failed to send reset email', true);
+        if (newPassword.length < 6) {
+            showMessage('Password must be at least 6 characters', true);
+            return;
         }
-    } catch (error) {
-        console.error('Error sending reset email:', error);
-        showMessage('Error sending reset email. Check email configuration.', true);
-    }
-}
-}
-
-async function resetUserPassword(userId) {
-    const newPassword = prompt('Enter new password for user:');
-    if (!newPassword) return;
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/reset-password`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'include',
-            body: JSON.stringify({ new_password: newPassword })
-        });
         
-        if (response.ok) {
-            showMessage('Password reset successfully');
-        } else {
-            const data = await response.json();
-            showMessage(data.error || 'Failed to reset password', true);
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ password: newPassword })
+            });
+            
+            if (response.ok) {
+                showMessage(`Password reset successfully for ${username}. New password: ${newPassword}`);
+            } else {
+                const data = await response.json();
+                showMessage(data.error || 'Failed to reset password', true);
+            }
+        } catch (error) {
+            console.error('Error resetting password:', error);
+            showMessage('Error resetting password', true);
         }
-    } catch (error) {
-        console.error('Error resetting password:', error);
-        showMessage('Error resetting password', true);
+    } else {
+        // Send email reset link
+        try {
+            const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/send-reset-email`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                showMessage(data.message || 'Password reset email sent successfully!');
+            } else {
+                const data = await response.json();
+                showMessage(data.error || 'Failed to send reset email', true);
+            }
+        } catch (error) {
+            console.error('Error sending reset email:', error);
+            showMessage('Error sending reset email. Check email configuration.', true);
+        }
     }
 }
 
