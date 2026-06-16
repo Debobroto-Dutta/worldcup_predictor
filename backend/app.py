@@ -221,6 +221,46 @@ def delete_user(user_id):
     
     return jsonify({'message': 'User deleted successfully'}), 200
 
+@app.route('/api/admin/users/<int:user_id>/reset-password', methods=['POST'])
+@login_required
+def admin_reset_user_password(user_id):
+    """Manually reset user password without sending email (admin only)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    user = User.query.get_or_404(user_id)
+    data = request.get_json()
+    
+    if not data or not data.get('new_password'):
+        return jsonify({'error': 'new_password is required'}), 400
+    
+    new_password = data['new_password'].strip()
+    
+    # Validate password length
+    if len(new_password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters'}), 400
+    
+    try:
+        # Set the new password (this hashes it automatically)
+        user.set_password(new_password)
+        
+        # Explicitly commit to database
+        db.session.commit()
+        
+        # Verify the change was saved
+        db.session.refresh(user)
+        
+        return jsonify({
+            'message': f'Password reset successfully for user {user.username}',
+            'username': user.username,
+            'email': user.email,
+            'user_id': user.id
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error resetting password: {e}")
+        return jsonify({'error': f'Failed to reset password: {str(e)}'}), 500
+
 @app.route('/api/admin/users/<int:user_id>/send-reset-email', methods=['POST'])
 @login_required
 def send_password_reset_email(user_id):

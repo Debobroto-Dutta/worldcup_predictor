@@ -710,43 +710,50 @@ async function sendPasswordResetEmail(userId, username, email) {
         }
         
         try {
-            const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
-                method: 'PUT',
+            showMessage('Resetting password...', false);
+            
+            const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/reset-password`, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 credentials: 'include',
-                body: JSON.stringify({ password: newPassword })
+                body: JSON.stringify({ new_password: newPassword })
             });
             
+            const data = await response.json();
+            
             if (response.ok) {
-                showMessage(`Password reset successfully for ${username}. New password: ${newPassword}`);
+                showMessage(`✅ ${data.message}\n\nUser can now login with the new password.`);
+                console.log('Password reset successful:', data);
             } else {
-                const data = await response.json();
-                showMessage(data.error || 'Failed to reset password', true);
+                showMessage(`❌ ${data.error || 'Failed to reset password'}`, true);
+                console.error('Password reset failed:', data);
             }
         } catch (error) {
             console.error('Error resetting password:', error);
-            showMessage('Error resetting password', true);
+            showMessage('❌ Network error while resetting password. Please check your connection.', true);
         }
     } else {
         // Send email reset link
         try {
+            showMessage('Sending password reset email...', false);
+            
             const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/send-reset-email`, {
                 method: 'POST',
                 credentials: 'include'
             });
             
+            const data = await response.json();
+            
             if (response.ok) {
-                const data = await response.json();
-                showMessage(data.message || 'Password reset email sent successfully!');
+                showMessage(`✅ ${data.message || 'Password reset email sent successfully!'}`);
             } else {
-                const data = await response.json();
-                showMessage(data.error || 'Failed to send reset email', true);
+                showMessage(`❌ ${data.error || 'Failed to send reset email'}`, true);
             }
         } catch (error) {
             console.error('Error sending reset email:', error);
-            showMessage('Error sending reset email. Check email configuration.', true);
+            showMessage('❌ Error sending reset email. Check email configuration.', true);
         }
     }
 }
