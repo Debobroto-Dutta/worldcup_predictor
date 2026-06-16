@@ -644,23 +644,12 @@ def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'healthy', 'timestamp': datetime.utcnow().isoformat()}), 200
 
-# Initialize database on startup
+# Initialize database tables on startup (no data seeding)
 with app.app_context():
     try:
-        # Try to create tables if they don't exist
+        # Only create tables if they don't exist
         db.create_all()
-        print("✓ Database tables initialized")
-        
-        # Create default admin user if it doesn't exist
-        admin = User.query.filter_by(username='admin').first()
-        if not admin:
-            admin = User(username='admin', email='admin@worldcup.com')
-            admin.set_password('admin123')
-            admin.is_admin = True
-            db.session.add(admin)
-            db.session.commit()
-            print("✓ Default admin user created (username: admin, password: admin123)")
-            
+        print("✓ Database tables checked/created")
     except Exception as e:
         print(f"⚠️  Database initialization warning: {e}")
 
