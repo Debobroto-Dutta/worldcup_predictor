@@ -1,5 +1,6 @@
 // API Configuration
-const API_BASE_URL = 'http://localhost:5000/api';
+// Use relative URL so it works both locally and on Render
+const API_BASE_URL = window.location.origin + '/api';
 
 let currentUser = null;
 

@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, url_for
+from flask import Flask, jsonify, request, url_for, send_from_directory
 from flask_cors import CORS
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_mail import Mail, Message
@@ -582,7 +582,26 @@ def init_database():
 
 @app.route('/')
 def index():
-    """Root route - API information"""
+    """Serve the main frontend page"""
+    return send_from_directory('../frontend', 'index.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    """Serve static frontend files"""
+    # Check if it's an API route
+    if path.startswith('api/'):
+        return jsonify({'error': 'API endpoint not found'}), 404
+    
+    # Serve frontend files
+    try:
+        return send_from_directory('../frontend', path)
+    except:
+        # If file not found, return 404 or redirect to index
+        return send_from_directory('../frontend', 'index.html')
+
+@app.route('/api')
+def api_info():
+    """API information endpoint"""
     return jsonify({
         'name': 'World Cup 2026 Predictor API',
         'version': '1.0.0',
@@ -596,7 +615,6 @@ def index():
             'admin': ['/api/admin/matches', '/api/admin/matches/<id>', '/api/admin/users', '/api/admin/calculate-points'],
             'health': ['/api/health']
         },
-        'frontend': 'Open frontend/index.html in your browser',
         'documentation': 'See README.md for full API documentation'
     }), 200
 
