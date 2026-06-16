@@ -3,8 +3,8 @@ Database migration script to add is_admin column to existing database
 Run this if you already have a database and need to add the admin feature
 """
 
-from app import app, db
-from models import User
+from backend.app import app, db
+from backend.models import User
 import sqlite3
 
 def migrate_database():

@@ -8,8 +8,8 @@ import sys
 # Add the backend directory to the path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from app import app, db
-from models import User, Match, Prediction
+from backend.app import app, db
+from backend.models import User, Match, Prediction
 
 def init_database():
     """Initialize database with all tables"""

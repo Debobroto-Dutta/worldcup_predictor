@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request, url_for
 from flask_cors import CORS
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_mail import Mail, Message
-from models import db, User, Match, Prediction
+from backend.models import db, User, Match, Prediction
 from datetime import datetime, timedelta
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 import os

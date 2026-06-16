@@ -3,8 +3,8 @@ Script to seed the database with FIFA World Cup 2026 matches
 Run this after initializing the database
 """
 
-from app import app, db
-from models import Match
+from backend.app import app, db
+from backend.models import Match
 from datetime import datetime
 
 def seed_matches():
