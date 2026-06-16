@@ -1157,6 +1157,7 @@ def check_past_match_urls():
         }), 200
         
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/admin/manage-match-urls', methods=['GET'])
 @login_required
