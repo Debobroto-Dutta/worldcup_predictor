@@ -644,6 +644,45 @@ def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'healthy', 'timestamp': datetime.utcnow().isoformat()}), 200
 
+@app.route('/api/admin/backfill-results', methods=['POST'])
+@login_required
+def backfill_results():
+    """Manually trigger backfill of all match results (admin only)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        from backend.match_updater import MatchUpdater
+        updater = MatchUpdater(app)
+        updated_count = updater.backfill_all_results()
+        
+        return jsonify({
+            'message': f'Successfully backfilled {updated_count} match(es)',
+            'updated_count': updated_count
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/test-api', methods=['GET'])
+@login_required
+def test_api():
+    """Test the World Cup API connection (admin only)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        from backend.match_updater import MatchUpdater
+        updater = MatchUpdater(app)
+        matches = updater.fetch_world_cup_matches()
+        
+        return jsonify({
+            'message': f'Found {len(matches)} matches from API',
+            'matches_count': len(matches),
+            'sample_matches': matches[:3] if matches else []
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # Initialize database tables on startup (no data seeding)
 with app.app_context():
     try:
