@@ -7,3 +7,6 @@ __pycache__/
 .vscode/
 backend/instance/
 *.db
+
+# Migration script with credentials (run locally, don't push)
+migrate_render_direct.py

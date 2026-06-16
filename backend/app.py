@@ -367,7 +367,9 @@ def get_matches():
         'stage': m.stage,
         'home_score': m.home_score,
         'away_score': m.away_score,
-        'is_finished': m.is_finished
+        'is_finished': m.is_finished,
+        'live_stream_url': m.live_stream_url,
+        'espn_match_id': m.espn_match_id
     } for m in matches]), 200
 
 @app.route('/api/matches/<int:match_id>', methods=['GET'])
@@ -383,7 +385,9 @@ def get_match(match_id):
         'stage': match.stage,
         'home_score': match.home_score,
         'away_score': match.away_score,
-        'is_finished': match.is_finished
+        'is_finished': match.is_finished,
+        'live_stream_url': match.live_stream_url,
+        'espn_match_id': match.espn_match_id
     }), 200
 
 @app.route('/api/matches', methods=['POST'])
@@ -431,6 +435,10 @@ def update_match(match_id):
         match.match_date = datetime.fromisoformat(data['match_date'])
     if 'stage' in data:
         match.stage = data['stage']
+    if 'live_stream_url' in data:
+        match.live_stream_url = data['live_stream_url']
+    if 'espn_match_id' in data:
+        match.espn_match_id = data['espn_match_id']
     
     db.session.commit()
     
@@ -639,6 +647,78 @@ def get_match_predictions(match_id):
         'points_earned': p.points_earned
     } for p in predictions]), 200
 
+@app.route('/api/admin/predictions', methods=['GET'])
+@login_required
+def get_all_predictions():
+    """Get all predictions from all users (admin only)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    # Get optional filters
+    user_id = request.args.get('user_id', type=int)
+    match_id = request.args.get('match_id', type=int)
+    
+    query = Prediction.query
+    
+    if user_id:
+        query = query.filter_by(user_id=user_id)
+    if match_id:
+        query = query.filter_by(match_id=match_id)
+    
+    predictions = query.all()
+    
+    return jsonify([{
+        'id': p.id,
+        'user_id': p.user_id,
+        'username': p.user.username,
+        'match_id': p.match_id,
+        'team_home': p.match.team_home,
+        'team_away': p.match.team_away,
+        'match_date': p.match.match_date.isoformat(),
+        'predicted_home_score': p.predicted_home_score,
+        'predicted_away_score': p.predicted_away_score,
+        'predicted_at': p.predicted_at.isoformat() if p.predicted_at else None,
+        'points_earned': p.points_earned,
+        'match_finished': p.match.is_finished,
+        'actual_home_score': p.match.home_score,
+        'actual_away_score': p.match.away_score
+    } for p in predictions]), 200
+
+@app.route('/api/admin/predictions/by-match', methods=['GET'])
+@login_required
+def get_predictions_by_match():
+    """Get all predictions grouped by match (admin only)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    matches = Match.query.order_by(Match.match_date).all()
+    
+    result = []
+    for match in matches:
+        predictions = [{
+            'user_id': p.user_id,
+            'username': p.user.username,
+            'predicted_home_score': p.predicted_home_score,
+            'predicted_away_score': p.predicted_away_score,
+            'points_earned': p.points_earned,
+            'predicted_at': p.predicted_at.isoformat() if p.predicted_at else None
+        } for p in match.predictions]
+        
+        result.append({
+            'match_id': match.id,
+            'team_home': match.team_home,
+            'team_away': match.team_away,
+            'match_date': match.match_date.isoformat(),
+            'stage': match.stage,
+            'is_finished': match.is_finished,
+            'home_score': match.home_score,
+            'away_score': match.away_score,
+            'predictions': predictions,
+            'predictions_count': len(predictions)
+        })
+    
+    return jsonify(result), 200
+
 # ============= Leaderboard Routes =============
 
 @app.route('/api/leaderboard', methods=['GET'])
@@ -815,6 +895,64 @@ def get_teams():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/admin/espn-update', methods=['POST'])
+@login_required
+def espn_update():
+    """Manually trigger ESPN API update (admin only)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        from backend.espn_updater import ESPNUpdater
+        updater = ESPNUpdater(app)
+        updated_count = updater.update_all_matches()
+        
+        return jsonify({
+            'message': f'Successfully updated {updated_count} match(es) from ESPN',
+            'updated_count': updated_count
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/espn-live-status', methods=['GET'])
+def espn_live_status():
+    """Get current live match status from ESPN (public endpoint)"""
+    try:
+        from backend.espn_updater import ESPNUpdater
+        updater = ESPNUpdater(app)
+        live_matches = updater.get_live_match_status()
+        
+        return jsonify({
+            'live_matches': live_matches,
+            'count': len(live_matches)
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/matches/<int:match_id>/set-live-url', methods=['POST'])
+@login_required
+def set_live_url(match_id):
+    """Set live streaming URL for a match (admin only)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    match = Match.query.get_or_404(match_id)
+    data = request.get_json()
+    
+    # Auto-generate URL with match ID if not provided
+    if 'live_stream_url' in data:
+        match.live_stream_url = data['live_stream_url']
+    else:
+        # Use the default cricboost URL with match ID
+        match.live_stream_url = f"https://cricboost.pages.dev/?id={match_id}"
+    
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Live streaming URL set successfully',
+        'live_stream_url': match.live_stream_url
+    }), 200
+
 # Initialize database tables on startup (no data seeding)
 with app.app_context():
     try:
@@ -848,6 +986,16 @@ try:
 except Exception as e:
     print(f"⚠️  Match updater initialization warning: {e}")
     print("   Manual result updates will still work via admin panel")
+
+# Initialize ESPN API updater (runs every 60 minutes)
+try:
+    from backend.espn_updater import setup_espn_scheduler
+    
+    espn_scheduler = setup_espn_scheduler(app)
+    print("✓ ESPN API updater initialized (runs every 60 minutes)")
+except Exception as e:
+    print(f"⚠️  ESPN updater initialization warning: {e}")
+    print("   Manual ESPN updates will still work via admin panel")
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

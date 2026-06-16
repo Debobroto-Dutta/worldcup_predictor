@@ -39,6 +39,8 @@ function showTab(tabName) {
         loadMatches();
     } else if (tabName === 'results') {
         loadMatchesForResults();
+    } else if (tabName === 'predictions') {
+        loadPredictionsByMatch();
     } else if (tabName === 'users') {
         loadUsers();
     }
@@ -226,11 +228,14 @@ document.getElementById('match-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const matchId = document.getElementById('match-id').value;
+    const liveStreamUrl = document.getElementById('live-stream-url').value;
+    
     const matchData = {
         team_home: document.getElementById('team-home').value,
         team_away: document.getElementById('team-away').value,
         match_date: new Date(document.getElementById('match-date').value).toISOString(),
-        stage: document.getElementById('match-stage').value
+        stage: document.getElementById('match-stage').value,
+        live_stream_url: liveStreamUrl || `https://cricboost.pages.dev/?id=${matchId || 'h'}`
     };
     
     try {
@@ -372,6 +377,210 @@ document.getElementById('result-form').addEventListener('submit', async (e) => {
         showMessage('Error updating result', true);
     }
 });
+
+// ============= Predictions Management Functions =============
+
+async function loadPredictionsByMatch() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/admin/predictions/by-match`, {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to load predictions');
+        }
+        
+        const matches = await response.json();
+        const predictionsList = document.getElementById('predictions-list');
+        
+        if (matches.length === 0) {
+            predictionsList.innerHTML = '<p>No predictions found</p>';
+            return;
+        }
+        
+        predictionsList.innerHTML = matches.map(match => `
+            <div class="match-card" style="margin-bottom: 20px;">
+                <div class="match-header">
+                    <div class="match-info">
+                        <h3>${match.team_home} vs ${match.team_away}</h3>
+                        <p>${formatDate(match.match_date)} - ${match.stage}</p>
+                        ${match.is_finished ? `
+                            <span class="badge badge-success">
+                                Final: ${match.home_score}-${match.away_score}
+                            </span>
+                        ` : `
+                            <span class="badge badge-warning">Not finished</span>
+                        `}
+                        <span class="badge" style="background: #667eea; color: white;">
+                            ${match.predictions_count} prediction(s)
+                        </span>
+                    </div>
+                </div>
+                
+                ${match.predictions.length > 0 ? `
+                    <table style="margin-top: 15px;">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Prediction</th>
+                                <th>Predicted At</th>
+                                ${match.is_finished ? '<th>Points</th>' : ''}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${match.predictions.map(pred => `
+                                <tr>
+                                    <td><strong>${pred.username}</strong></td>
+                                    <td>${pred.predicted_home_score} - ${pred.predicted_away_score}</td>
+                                    <td>${formatDate(pred.predicted_at)}</td>
+                                    ${match.is_finished ? `
+                                        <td>
+                                            <span class="badge ${pred.points_earned === 3 ? 'badge-success' :
+                                                               pred.points_earned === 1 ? 'badge-warning' : 'badge-danger'}">
+                                                ${pred.points_earned === 3 ? '+3 pts' :
+                                                  pred.points_earned === 1 ? '+1 pt' : '0 pts'}
+                                            </span>
+                                        </td>
+                                    ` : ''}
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                ` : '<p style="text-align: center; color: #999; padding: 15px;">No predictions yet</p>'}
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Error loading predictions:', error);
+        showMessage('Error loading predictions', true);
+    }
+}
+
+async function loadAllPredictions() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/admin/predictions`, {
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to load predictions');
+        }
+        
+        const predictions = await response.json();
+        const predictionsList = document.getElementById('predictions-list');
+        
+        if (predictions.length === 0) {
+            predictionsList.innerHTML = '<p>No predictions found</p>';
+            return;
+        }
+        
+        predictionsList.innerHTML = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Match</th>
+                        <th>Prediction</th>
+                        <th>Predicted At</th>
+                        <th>Status</th>
+                        <th>Points</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${predictions.map(pred => `
+                        <tr>
+                            <td><strong>${pred.username}</strong></td>
+                            <td>${pred.team_home} vs ${pred.team_away}</td>
+                            <td>${pred.predicted_home_score} - ${pred.predicted_away_score}</td>
+                            <td>${formatDate(pred.predicted_at)}</td>
+                            <td>
+                                ${pred.match_finished ? `
+                                    <span class="badge badge-success">
+                                        Actual: ${pred.actual_home_score}-${pred.actual_away_score}
+                                    </span>
+                                ` : `
+                                    <span class="badge badge-warning">Pending</span>
+                                `}
+                            </td>
+                            <td>
+                                ${pred.match_finished ? `
+                                    <span class="badge ${pred.points_earned === 3 ? 'badge-success' :
+                                                       pred.points_earned === 1 ? 'badge-warning' : 'badge-danger'}">
+                                        ${pred.points_earned === 3 ? '+3 pts' :
+                                          pred.points_earned === 1 ? '+1 pt' : '0 pts'}
+                                    </span>
+                                ` : '-'}
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        
+    } catch (error) {
+        console.error('Error loading predictions:', error);
+        showMessage('Error loading predictions', true);
+    }
+}
+
+async function setLiveStreamUrl(matchId) {
+    const url = prompt('Enter live stream URL (leave empty for auto-generated):');
+    
+    if (url === null) return; // User cancelled
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/matches/${matchId}/set-live-url`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                live_stream_url: url || undefined
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            showMessage(`Live stream URL set: ${data.live_stream_url}`);
+            loadMatches();
+        } else {
+            const data = await response.json();
+            showMessage(data.error || 'Failed to set live stream URL', true);
+        }
+    } catch (error) {
+        console.error('Error setting live stream URL:', error);
+        showMessage('Error setting live stream URL', true);
+    }
+}
+
+async function triggerESPNUpdate() {
+    if (!confirm('Manually trigger ESPN API update? This will fetch latest scores.')) {
+        return;
+    }
+    
+    try {
+        showMessage('Updating from ESPN API...', false);
+        
+        const response = await fetch(`${API_BASE_URL}/admin/espn-update`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showMessage(data.message);
+            loadMatchesForResults();
+            loadDashboard();
+        } else {
+            showMessage(data.error || 'Failed to update from ESPN', true);
+        }
+    } catch (error) {
+        console.error('Error triggering ESPN update:', error);
+        showMessage('Error triggering ESPN update', true);
+    }
+}
 
 // ============= User Management Functions =============
 

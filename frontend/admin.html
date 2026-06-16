@@ -309,6 +309,7 @@
             <button class="nav-tab active" onclick="showTab('dashboard')">Dashboard</button>
             <button class="nav-tab" onclick="showTab('matches')">Manage Matches</button>
             <button class="nav-tab" onclick="showTab('results')">Update Results</button>
+            <button class="nav-tab" onclick="showTab('predictions')">User Predictions</button>
             <button class="nav-tab" onclick="showTab('users')">Users</button>
         </div>
 
@@ -355,6 +356,19 @@
                 <p>Select a match to update its result and calculate points</p>
                 
                 <div id="results-list"></div>
+            </div>
+
+            <!-- User Predictions Tab -->
+            <div id="predictions-tab" class="tab-content">
+                <h2>User Predictions</h2>
+                <p>View all predictions made by users for each match</p>
+                
+                <div style="margin-bottom: 20px;">
+                    <button class="btn" onclick="loadPredictionsByMatch()">View by Match</button>
+                    <button class="btn btn-secondary" onclick="loadAllPredictions()">View All</button>
+                </div>
+                
+                <div id="predictions-list"></div>
             </div>
 
             <!-- Users Tab -->
@@ -424,6 +438,12 @@
                             <option value="Final">Final</option>
                         </select>
                     </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Live Stream URL (Optional)</label>
+                    <input type="text" id="live-stream-url" placeholder="https://cricboost.pages.dev/?id=h">
+                    <small style="color: #666;">Leave empty to auto-generate or enter custom URL</small>
                 </div>
                 
                 <div style="display: flex; gap: 10px; margin-top: 20px;">

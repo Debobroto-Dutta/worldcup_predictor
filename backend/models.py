@@ -46,6 +46,12 @@ class Match(db.Model):
     away_score = db.Column(db.Integer, nullable=True)
     is_finished = db.Column(db.Boolean, default=False)
     
+    # Live streaming URL
+    live_stream_url = db.Column(db.String(500), nullable=True)
+    
+    # ESPN API match ID for tracking
+    espn_match_id = db.Column(db.String(100), nullable=True)
+    
     # Relationships
     predictions = db.relationship('Prediction', backref='match', lazy=True, cascade='all, delete-orphan')
     

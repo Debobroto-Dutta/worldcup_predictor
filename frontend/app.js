@@ -207,6 +207,14 @@ async function loadMatches() {
                         <div class="team">${match.team_away}</div>
                     </div>
                     
+                    ${hasStarted && match.live_stream_url ? `
+                        <div style="text-align: center; margin: 10px 0;">
+                            <a href="${match.live_stream_url}" target="_blank" class="btn" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); text-decoration: none; display: inline-block;">
+                                🔴 Watch Live Stream
+                            </a>
+                        </div>
+                    ` : ''}
+                    
                     ${match.is_finished ? `
                         <div style="text-align: center; font-size: 1.5em; font-weight: bold; color: #667eea;">
                             Final Score: ${match.home_score} - ${match.away_score}
