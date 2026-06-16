@@ -957,6 +957,87 @@ def set_live_url(match_id):
         'live_stream_url': match.live_stream_url
     }), 200
 
+@app.route('/api/admin/remove-past-match-urls', methods=['POST'])
+@login_required
+def remove_past_match_urls():
+    """Remove URLs from all finished matches (admin only)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        # Find all finished matches with URLs
+        finished_matches = Match.query.filter(
+            Match.is_finished == True,
+            Match.live_stream_url.isnot(None),
+            Match.live_stream_url != ''
+        ).all()
+        
+        if not finished_matches:
+            return jsonify({
+                'message': 'No finished matches with URLs found',
+                'removed_count': 0,
+                'matches': []
+            }), 200
+        
+        # Collect match info before removing URLs
+        matches_info = []
+        for match in finished_matches:
+            matches_info.append({
+                'id': match.id,
+                'home': match.team_home,
+                'away': match.team_away,
+                'date': match.match_date.isoformat(),
+                'score': f"{match.home_score}-{match.away_score}",
+                'url_removed': match.live_stream_url
+            })
+            match.live_stream_url = None
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'Successfully removed URLs from {len(finished_matches)} finished matches',
+            'removed_count': len(finished_matches),
+            'matches': matches_info
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/admin/check-past-match-urls', methods=['GET'])
+@login_required
+def check_past_match_urls():
+    """Check how many finished matches have URLs (admin only)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        # Count finished matches with URLs
+        finished_with_urls = Match.query.filter(
+            Match.is_finished == True,
+            Match.live_stream_url.isnot(None),
+            Match.live_stream_url != ''
+        ).all()
+        
+        matches_info = []
+        for match in finished_with_urls:
+            matches_info.append({
+                'id': match.id,
+                'home': match.team_home,
+                'away': match.team_away,
+                'date': match.match_date.isoformat(),
+                'score': f"{match.home_score}-{match.away_score}",
+                'url': match.live_stream_url
+            })
+        
+        return jsonify({
+            'count': len(finished_with_urls),
+            'matches': matches_info
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # Initialize database tables on startup (no data seeding)
 with app.app_context():
     try:

@@ -8,33 +8,46 @@ from backend.models import db, Match
 
 def auto_set_live_urls(app):
     """
-    Automatically set live streaming URLs for matches that have started
-    but don't have a URL yet
+    Automatically set live streaming URLs ONLY for matches that are currently LIVE
+    (started but not finished). Remove URLs from finished matches.
     """
     with app.app_context():
         try:
-            # Find matches that have started but don't have live URLs
             now = datetime.utcnow()
-            matches_without_urls = Match.query.filter(
+            
+            # Find LIVE matches (started but not finished)
+            live_matches = Match.query.filter(
                 Match.match_date <= now,
-                Match.live_stream_url == None
+                Match.is_finished == False
             ).all()
             
-            if not matches_without_urls:
-                print("ℹ️  All started matches already have live URLs")
-                return 0
+            # Find finished matches that still have URLs
+            finished_matches = Match.query.filter(
+                Match.is_finished == True,
+                Match.live_stream_url != None
+            ).all()
             
             updated_count = 0
-            for match in matches_without_urls:
-                # Set default live stream URL
-                match.live_stream_url = f"https://cricboost.pages.dev/?id=h"
+            
+            # Set URLs for live matches
+            for match in live_matches:
+                if not match.live_stream_url:
+                    match.live_stream_url = f"https://cricboost.pages.dev/?id=h"
+                    updated_count += 1
+                    print(f"✅ Set live URL for LIVE match: {match.team_home} vs {match.team_away}")
+            
+            # Remove URLs from finished matches
+            for match in finished_matches:
+                match.live_stream_url = None
                 updated_count += 1
-                print(f"✅ Set live URL for: {match.team_home} vs {match.team_away}")
+                print(f"🔴 Removed URL from finished match: {match.team_home} vs {match.team_away}")
             
             db.session.commit()
             
             if updated_count > 0:
-                print(f"✅ Auto-set live URLs for {updated_count} match(es)")
+                print(f"✅ Updated {updated_count} match(es) - Live: {len(live_matches)}, Finished: {len(finished_matches)}")
+            else:
+                print("ℹ️  No URL updates needed")
             
             return updated_count
             
