@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test - World Cup Predictor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 API Diagnostic Tool</h1>
+    <p>Use this page to test if your API is working correctly.</p>
+
+    <div class="test-section">
+        <h2>1. Test API Base URL</h2>
+        <p>Current API URL: <strong id="api-url"></strong></p>
+        <button onclick="testHealth()">Test /api/health</button>
+        <button onclick="testRoot()">Test / (root)</button>
+        <button onclick="testApiInfo()">Test /api</button>
+        <div id="health-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test Registration</h2>
+        <input type="text" id="reg-username" placeholder="Username" style="margin: 5px; padding: 8px;">
+        <input type="email" id="reg-email" placeholder="Email" style="margin: 5px; padding: 8px;">
+        <input type="password" id="reg-password" placeholder="Password" style="margin: 5px; padding: 8px;">
+        <button onclick="testRegister()">Register Test User</button>
+        <div id="register-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test Login</h2>
+        <input type="text" id="login-username" placeholder="Username" style="margin: 5px; padding: 8px;">
+        <input type="password" id="login-password" placeholder="Password" style="margin: 5px; padding: 8px;">
+        <button onclick="testLogin()">Login</button>
+        <div id="login-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Matches Endpoint</h2>
+        <button onclick="testMatches()">Get Matches</button>
+        <div id="matches-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = window.location.origin + '/api';
+        document.getElementById('api-url').textContent = API_BASE_URL;
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.className = `result ${type}`;
+            element.textContent = message;
+        }
+
+        async function testHealth() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                const data = await response.json();
+                showResult('health-result', 
+                    `✅ Success!\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`,
+                    'success');
+            } catch (error) {
+                showResult('health-result', 
+                    `❌ Error: ${error.message}\n\nThis means the API is not reachable.`,
+                    'error');
+            }
+        }
+
+        async function testRoot() {
+            try {
+                const response = await fetch(window.location.origin + '/');
+                const text = await response.text();
+                showResult('health-result', 
+                    `✅ Root accessible!\nStatus: ${response.status}\nContent type: ${response.headers.get('content-type')}`,
+                    'success');
+            } catch (error) {
+                showResult('health-result', 
+                    `❌ Error: ${error.message}`,
+                    'error');
+            }
+        }
+
+        async function testApiInfo() {
+            try {
+                const response = await fetch(`${API_BASE_URL}`);
+                const data = await response.json();
+                showResult('health-result', 
+                    `✅ API Info:\n${JSON.stringify(data, null, 2)}`,
+                    'success');
+            } catch (error) {
+                showResult('health-result', 
+                    `❌ Error: ${error.message}`,
+                    'error');
+            }
+        }
+
+        async function testRegister() {
+            const username = document.getElementById('reg-username').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+
+            if (!username || !email || !password) {
+                showResult('register-result', '⚠️ Please fill all fields', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('register-result', 
+                        `✅ Registration successful!\n${JSON.stringify(data, null, 2)}`,
+                        'success');
+                } else {
+                    showResult('register-result', 
+                        `❌ Registration failed\nStatus: ${response.status}\nError: ${JSON.stringify(data, null, 2)}`,
+                        'error');
+                }
+            } catch (error) {
+                showResult('register-result', 
+                    `❌ Network Error: ${error.message}\n\nPossible causes:\n- API server not running\n- CORS issue\n- Network connectivity problem`,
+                    'error');
+            }
+        }
+
+        async function testLogin() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            if (!username || !password) {
+                showResult('login-result', '⚠️ Please fill all fields', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('login-result', 
+                        `✅ Login successful!\n${JSON.stringify(data, null, 2)}`,
+                        'success');
+                } else {
+                    showResult('login-result', 
+                        `❌ Login failed\nStatus: ${response.status}\nError: ${JSON.stringify(data, null, 2)}`,
+                        'error');
+                }
+            } catch (error) {
+                showResult('login-result', 
+                    `❌ Network Error: ${error.message}\n\nPossible causes:\n- API server not running\n- CORS issue\n- Database not initialized\n- Network connectivity problem`,
+                    'error');
+            }
+        }
+
+        async function testMatches() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/matches`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('matches-result', 
+                        `✅ Matches retrieved!\nCount: ${data.length}\nFirst match: ${JSON.stringify(data[0] || 'No matches', null, 2)}`,
+                        'success');
+                } else {
+                    showResult('matches-result', 
+                        `❌ Failed\nStatus: ${response.status}\nError: ${JSON.stringify(data, null, 2)}`,
+                        'error');
+                }
+            } catch (error) {
+                showResult('matches-result', 
+                    `❌ Error: ${error.message}`,
+                    'error');
+            }
+        }
+
+        // Auto-test health on load
+        window.onload = () => {
+            testHealth();
+        };
+    </script>
+</body>
+</html>
