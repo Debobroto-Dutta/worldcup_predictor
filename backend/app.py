@@ -447,6 +447,88 @@ def delete_match(match_id):
     db.session.delete(match)
     db.session.commit()
     
+
+@app.route('/api/admin/load-2026-matches', methods=['POST'])
+@login_required
+def load_2026_matches_endpoint():
+    """Load 2026 World Cup matches from CSV (admin only)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        import csv
+        import os
+        
+        # Clear existing matches and predictions
+        Prediction.query.delete()
+        Match.query.delete()
+        db.session.commit()
+        
+        # Load matches from CSV
+        csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'schedule.csv')
+        
+        if not os.path.exists(csv_path):
+            return jsonify({'error': 'schedule.csv not found'}), 404
+        
+        matches_added = 0
+        
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            
+            for row in reader:
+                match_str = row.get('Match', '').strip()
+                
+                # Skip knockout rounds (TBD matches)
+                if 'Round of' in match_str or 'Quarterfinal' in match_str or 'Semifinal' in match_str or 'Final' in match_str or 'Third-place' in match_str:
+                    continue
+                
+                # Extract teams
+                if ' v/s ' in match_str:
+                    teams = match_str.split(' v/s ')
+                elif ' vs ' in match_str:
+                    teams = match_str.split(' vs ')
+                else:
+                    continue
+                
+                if len(teams) != 2:
+                    continue
+                
+                home_team, away_team = teams[0].strip(), teams[1].strip()
+                
+                # Parse date (simplified - use a default time)
+                date_str = row.get('Date', '').strip()
+                try:
+                    from datetime import datetime
+                    # Parse date like "June 11, 2026"
+                    match_date = datetime.strptime(date_str, "%B %d, %Y")
+                except:
+                    match_date = datetime(2026, 6, 11, 12, 0)
+                
+                # Determine stage
+                stage = 'Group Stage'
+                
+                # Create match
+                new_match = Match(
+                    team_home=home_team,
+                    team_away=away_team,
+                    match_date=match_date,
+                    stage=stage,
+                    is_finished=False
+                )
+                
+                db.session.add(new_match)
+                matches_added += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Successfully loaded 2026 matches',
+            'matches_added': matches_added
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
     return jsonify({'message': 'Match deleted successfully'}), 200
 
 @app.route('/api/matches/<int:match_id>/result', methods=['PUT'])
