@@ -7,9 +7,12 @@ import pytz
 db = SQLAlchemy()
 
 def get_ist_now():
-    """Get current time in IST"""
+    """Get current time in IST as naive datetime (no timezone info)
+    This ensures PostgreSQL stores the IST time directly without conversion"""
     ist = pytz.timezone('Asia/Kolkata')
-    return datetime.now(ist)
+    # Get IST time and remove timezone info so it's stored as-is
+    ist_time = datetime.now(ist)
+    return ist_time.replace(tzinfo=None)
 
 class User(UserMixin, db.Model):
     """User model for authentication and tracking"""
