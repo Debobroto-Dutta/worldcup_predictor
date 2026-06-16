@@ -48,8 +48,9 @@ function showTab(tabName) {
 
 function formatDate(dateString) {
     const date = new Date(dateString);
-    // Times are already stored in IST, just format them
+    // Convert to IST (UTC+5:30)
     return date.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
         year: 'numeric',
         month: 'short',
         day: 'numeric',
