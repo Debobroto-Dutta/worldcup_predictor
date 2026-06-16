@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Predictions - Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        select, input {
+            padding: 10px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-back {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-back:hover {
+            background: #4b5563;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .status.success {
+            background: #dcfce7;
+            color: #166534;
+            border-left: 4px solid #22c55e;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .matches-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .match-card {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .match-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        }
+
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .match-info {
+            flex: 1;
+        }
+
+        .match-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+
+        .match-details {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .match-status {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-finished {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-upcoming {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .predictions-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .prediction-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 150px 1fr auto;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .prediction-scores {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .score-input {
+            width: 60px;
+            padding: 8px;
+            text-align: center;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .score-input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .vs-text {
+            color: #6b7280;
+            font-weight: 600;
+        }
+
+        .points-badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            background: #eff6ff;
+            color: #1e40af;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-save {
+            background: #22c55e;
+            color: white;
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        .btn-save:hover {
+            background: #16a34a;
+        }
+
+        .btn-delete {
+            background: #ef4444;
+            color: white;
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        .btn-delete:hover {
+            background: #dc2626;
+        }
+
+        .btn-save:disabled, .btn-delete:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .no-predictions {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(102, 126, 234, 0.2);
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✏️ Edit Predictions</h1>
+        <p class="subtitle">Admin Tool - Edit any user's predictions, even after matches finish</p>
+
+        <div id="status" class="status"></div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-value" id="totalMatches">0</div>
+                <div class="stat-label">Total Matches</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalPredictions">0</div>
+                <div class="stat-label">Total Predictions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="finishedMatches">0</div>
+                <div class="stat-label">Finished Matches</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="filter-group">
+                <label>Filter:</label>
+                <select id="filterStatus">
+                    <option value="all">All Matches</option>
+                    <option value="finished">Finished Only</option>
+                    <option value="upcoming">Upcoming Only</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Search:</label>
+                <input type="text" id="searchInput" placeholder="Team or user name...">
+            </div>
+            <button class="btn-primary" onclick="loadPredictions()">🔄 Refresh</button>
+            <button class="btn-back" onclick="window.location.href='admin.html'">← Back to Admin</button>
+        </div>
+
+        <div id="matchesContainer">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <p>Loading predictions...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allMatches = [];
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            setTimeout(() => status.style.display = 'none', 5000);
+        }
+
+        async function loadPredictions() {
+            const container = document.getElementById('matchesContainer');
+            container.innerHTML = '<div class="loading"><div class="loading-spinner"></div><p>Loading predictions...</p></div>';
+
+            try {
+                const response = await fetch('/api/admin/predictions/by-match', {
+                    credentials: 'include'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load predictions');
+                }
+
+                allMatches = await response.json();
+                updateStats();
+                displayMatches(allMatches);
+            } catch (error) {
+                container.innerHTML = `<div class="no-predictions">❌ Error: ${error.message}</div>`;
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function updateStats() {
+            const totalMatches = allMatches.length;
+            const totalPredictions = allMatches.reduce((sum, m) => sum + m.predictions_count, 0);
+            const finishedMatches = allMatches.filter(m => m.is_finished).length;
+
+            document.getElementById('totalMatches').textContent = totalMatches;
+            document.getElementById('totalPredictions').textContent = totalPredictions;
+            document.getElementById('finishedMatches').textContent = finishedMatches;
+            document.getElementById('stats').style.display = 'grid';
+        }
+
+        function displayMatches(matches) {
+            const container = document.getElementById('matchesContainer');
+            
+            if (matches.length === 0) {
+                container.innerHTML = '<div class="no-predictions">No matches found</div>';
+                return;
+            }
+
+            const html = matches.map(match => `
+                <div class="match-card">
+                    <div class="match-header">
+                        <div class="match-info">
+                            <div class="match-title">${match.team_home} vs ${match.team_away}</div>
+                            <div class="match-details">
+                                📅 ${new Date(match.match_date).toLocaleString()} | 
+                                🏆 ${match.stage}
+                                ${match.is_finished ? ` | ⚽ ${match.home_score}-${match.away_score}` : ''}
+                            </div>
+                        </div>
+                        <div class="match-status ${match.is_finished ? 'status-finished' : 'status-upcoming'}">
+                            ${match.is_finished ? '✓ Finished' : '⏳ Upcoming'}
+                        </div>
+                    </div>
+                    <div class="predictions-list">
+                        ${match.predictions.length === 0 ? 
+                            '<div class="no-predictions">No predictions yet</div>' :
+                            match.predictions.map(pred => `
+                                <div class="prediction-item" data-prediction-id="${pred.user_id}-${match.match_id}">
+                                    <div class="user-name">👤 ${pred.username}</div>
+                                    <div class="prediction-scores">
+                                        <input type="number" 
+                                               class="score-input" 
+                                               value="${pred.predicted_home_score}"
+                                               min="0"
+                                               id="home-${pred.user_id}-${match.match_id}">
+                                        <span class="vs-text">-</span>
+                                        <input type="number" 
+                                               class="score-input" 
+                                               value="${pred.predicted_away_score}"
+                                               min="0"
+                                               id="away-${pred.user_id}-${match.match_id}">
+                                        ${pred.points_earned !== null ? 
+                                            `<span class="points-badge">🏆 ${pred.points_earned} pts</span>` : 
+                                            '<span class="points-badge">⏳ Pending</span>'}
+                                    </div>
+                                    <div class="action-buttons">
+                                        <button class="btn-save" onclick="savePrediction(${pred.user_id}, ${match.match_id})">
+                                            💾 Save
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')
+                        }
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = `<div class="matches-grid">${html}</div>`;
+        }
+
+        async function savePrediction(userId, matchId) {
+            const homeInput = document.getElementById(`home-${userId}-${matchId}`);
+            const awayInput = document.getElementById(`away-${userId}-${matchId}`);
+            
+            const homeScore = parseInt(homeInput.value);
+            const awayScore = parseInt(awayInput.value);
+
+            if (isNaN(homeScore) || isNaN(awayScore) || homeScore < 0 || awayScore < 0) {
+                showStatus('Invalid scores', 'error');
+                return;
+            }
+
+            try {
+                // First, get the prediction ID
+                const match = allMatches.find(m => m.match_id === matchId);
+                const prediction = match.predictions.find(p => p.user_id === userId);
+                
+                if (!prediction) {
+                    showStatus('Prediction not found', 'error');
+                    return;
+                }
+
+                // Find prediction ID from the full predictions list
+                const allPredResponse = await fetch('/api/admin/predictions', {
+                    credentials: 'include'
+                });
+                const allPreds = await allPredResponse.json();
+                const fullPred = allPreds.find(p => p.user_id === userId && p.match_id === matchId);
+                
+                if (!fullPred) {
+                    showStatus('Could not find prediction ID', 'error');
+                    return;
+                }
+
+                const response = await fetch(`/api/admin/predictions/${fullPred.id}`, {
+                    method: 'PUT',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        predicted_home_score: homeScore,
+                        predicted_away_score: awayScore
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update prediction');
+                }
+
+                const data = await response.json();
+                showStatus(`✓ ${data.message}`, 'success');
+                
+                // Reload to show updated points
+                setTimeout(() => loadPredictions(), 1000);
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function filterMatches() {
+            const status = document.getElementById('filterStatus').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+
+            let filtered = allMatches;
+
+            // Filter by status
+            if (status === 'finished') {
+                filtered = filtered.filter(m => m.is_finished);
+            } else if (status === 'upcoming') {
+                filtered = filtered.filter(m => !m.is_finished);
+            }
+
+            // Filter by search
+            if (search) {
+                filtered = filtered.filter(m => 
+                    m.team_home.toLowerCase().includes(search) ||
+                    m.team_away.toLowerCase().includes(search) ||
+                    m.predictions.some(p => p.username.toLowerCase().includes(search))
+                );
+            }
+
+            displayMatches(filtered);
+        }
+
+        // Event listeners
+        document.getElementById('filterStatus').addEventListener('change', filterMatches);
+        document.getElementById('searchInput').addEventListener('input', filterMatches);
+
+        // Load on page load
+        window.addEventListener('load', loadPredictions);
+    </script>
+</body>
+</html>
