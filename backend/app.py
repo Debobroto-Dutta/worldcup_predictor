@@ -683,6 +683,56 @@ def test_api():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/admin/sync-matches', methods=['POST'])
+@login_required
+def sync_matches():
+    """Sync all matches from API to database (admin only)"""
+    if not current_user.is_admin:
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        from backend.match_updater import MatchUpdater
+        updater = MatchUpdater(app)
+        created, updated = updater.sync_matches_from_api()
+        
+        return jsonify({
+            'message': f'Sync complete: {created} created, {updated} updated',
+            'created_count': created,
+            'updated_count': updated
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/live-scores', methods=['GET'])
+def get_live_scores():
+    """Get current live scores from API (public endpoint)"""
+    try:
+        from backend.match_updater import MatchUpdater
+        updater = MatchUpdater(app)
+        live_matches = updater.get_live_scores()
+        
+        return jsonify({
+            'live_matches': live_matches,
+            'count': len(live_matches)
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/teams', methods=['GET'])
+def get_teams():
+    """Get all teams from API (public endpoint)"""
+    try:
+        from backend.match_updater import MatchUpdater
+        updater = MatchUpdater(app)
+        teams_data = updater.fetch_teams()
+        
+        if teams_data:
+            return jsonify(teams_data), 200
+        else:
+            return jsonify({'error': 'Failed to fetch teams'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # Initialize database tables on startup (no data seeding)
 with app.app_context():
     try:

@@ -11,6 +11,11 @@ A web application for friends to predict World Cup 2026 match winners and scorel
   - 1 point for correct winner prediction
   - 0 points for incorrect predictions
 - **Leaderboard**: Real-time rankings showing top predictors
+- **Live Football Scores**: Automatic integration with worldcupjson.net API
+  - Real-time score updates every 15 minutes
+  - Live match tracking
+  - Automatic points calculation
+- **Admin Panel**: Manage matches, users, and sync scores
 - **Responsive Design**: Works on desktop and mobile devices
 - **Extensible Architecture**: Easy to add new features
 
