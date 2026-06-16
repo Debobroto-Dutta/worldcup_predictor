@@ -129,6 +129,11 @@ class MatchUpdater:
                 updated_count = 0
                 
                 for api_match in api_matches:
+                    # FILTER: Only process 2026 matches, skip 2022 data
+                    match_date_str = api_match.get('datetime', '')
+                    if match_date_str and '2022' in match_date_str:
+                        continue  # Skip 2022 World Cup matches
+                    
                     # Extract match data from worldcupjson.net API format
                     status = api_match.get('status', '')
                     
@@ -241,6 +246,11 @@ class MatchUpdater:
                 updated_count = 0
                 
                 for api_match in api_matches:
+                    # FILTER: Only process 2026 matches, skip 2022 data
+                    match_date_str = api_match.get('datetime', '')
+                    if match_date_str and '2022' in match_date_str:
+                        continue  # Skip 2022 World Cup matches
+                    
                     home_team_data = api_match.get('home_team', {})
                     away_team_data = api_match.get('away_team', {})
                     

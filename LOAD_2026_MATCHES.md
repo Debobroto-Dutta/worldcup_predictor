@@ -3,6 +3,14 @@
 ## Overview
 This guide explains how to remove 2022 World Cup data and load only 2026 World Cup matches into your database.
 
+## ⚠️ Important: API Returns 2022 Data
+The worldcupjson.net API currently returns 2022 World Cup data. To prevent 2022 matches from being synced into your database:
+
+1. **The match_updater.py has been modified** to filter out any matches from 2022
+2. **Always use the load_2026_matches.py script** to populate your database with 2026 matches
+3. **The automatic sync will skip 2022 matches** thanks to the date filter
+
+
 ## What Was Done
 
 ### ✅ Removed All 2022 Data
